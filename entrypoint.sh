@@ -23,6 +23,22 @@ echo "starting vpn client"
 echo "login to $HOST as $LOGIN"
 
 (
+    echo "waiting for tun0 interface..."
+    while ! ip link show tun0 >/dev/null 2>&1; do
+        sleep 1
+    done
+    echo "tun0 is up!"
+
+    if [ -n "$EXTRA_ROUTES" ]; then
+        echo "processing EXTRA_ROUTES (IP/CIDR only)..."
+        CLEAN_ROUTES=$(echo "$EXTRA_ROUTES" | tr ',' ' ')
+
+        for route in $CLEAN_ROUTES; do
+            echo "adding route: $route dev tun0"
+            ip route add "$route" dev tun0 || echo "warning: failed to add route $route"
+        done
+    fi
+
     echo "try to ping jira.mos.ru..."
     while true; do
         if ping -c1 -W1 jira.mos.ru >/dev/null 2>&1; then
@@ -38,3 +54,4 @@ echo "login to $HOST as $LOGIN"
 # exec /opt/cprongate/ngateconsoleclient -vvvv -l /dev/stdout -u "$LOGIN" -p "$PASSWORD" "$HOST"
 
 exec /opt/cprongate/ngateconsoleclient -l /dev/stdout -u "$LOGIN" -p "$PASSWORD" "$HOST"
+
