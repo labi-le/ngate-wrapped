@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  ngate:
+    build: .
+    container_name: ngate-vpn
+    cap_add:
+      - NET_ADMIN 
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    env_file:
+      - .env
+    restart: always
+    network_mode: bridge 
+    dns:
+      - 192.168.1.1 # берем с роутера или с хостовой машины (если есть)
+      # - 127.0.0.1
+
+      - 10.206.185.123
+      - 10.15.40.122
