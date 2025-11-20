@@ -5,16 +5,29 @@ services:
     build: .
     container_name: ngate-vpn
     cap_add:
-      - NET_ADMIN 
+      - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
     env_file:
       - .env
     restart: always
-    network_mode: bridge 
+    network_mode: host
     dns:
       - 192.168.1.1 # берем с роутера или с хостовой машины (если есть)
       # - 127.0.0.1
 
       - 10.206.185.123
       - 10.15.40.122
+
+  dns:
+    image: dockurr/dnsmasq:2.90
+    container_name: ngate-dns
+    environment:
+      DNS1: "10.206.185.123"
+      DNS2: "10.15.40.122"
+    ports:
+      - "5354:53/udp"
+      - "5354:53/tcp"
+    cap_add:
+      - NET_ADMIN
+    restart: always
