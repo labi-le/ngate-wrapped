@@ -1,0 +1,342 @@
+#cloud-config
+hostname: debian-sakura
+manage_etc_hosts: true
+
+write_files:
+  - path: /etc/apt/apt.conf.d/99no-translations
+    content: |
+      Acquire::Languages { "none"; };
+  - path: /etc/apt/apt.conf.d/99no-recommends
+    content: |
+      APT::Install-Recommends "0";
+      APT::Install-Suggests "0";
+
+  - path: /etc/apt/sources.list.d/cryptopro.list
+    content: |
+      deb [trusted=yes] https://ng-client.cryptopro.ru/repository/debian/amd64/ ./
+
+  - path: /usr/share/keyrings/xpra.asc
+    permissions: '0644'
+    # https://xpra.org/xpra.asc
+    content: |
+      -----BEGIN PGP PUBLIC KEY BLOCK-----
+      
+      mQINBGSEpywBEACn1DbqO5RrpaA5EiEpXbNrPeaxGgy6v53DLlgPOsUc4MSoz8uN
+      Qw6n+yFPVjlWmk3nyhNdwZH2ImsKyYTvC7wt3Bn9IIvCuGmKC9xy6dd+fsCHf6m4
+      BYpVWBhhCixp291sBiQ+jYPhZ2Ch8DpAm92Lgqp2A/r6//Gz0jt/5i9NblHuiYZ+
+      achuyYGGp2tJpWG1A5/q0DpgMqq2pWNPu6+sh/iecMq992KCbzkyq/nTy9niYVvp
+      c6Ms7N5q25hYD6090M2gR2PtNv+SPssEv9kjQEIwoTheJXxZ/5uTPDKy/ymtsu4d
+      VTTMyubr4cZltW0q0WQWrgzcjVwbcbmMgl6ouzB1SIzvOBNodHZIuKnaLmqrZwGG
+      3wnM98RGYaotAj/BLdwXeBTLO5IgZSGI5YcwAREVBK0LUtKQj4Ypj7JTxv62XySr
+      wuuYuximxfSAmbiXuVsPe3Y6yQPUNZ+mkvYpkbS/zKxN7EVzwZsUDyNfwkWXc2bQ
+      BowSEyKYNMdR8SjdS0D1Gtc1QbVMd4mYuQqK3gz3SK4mBdePFBAUwjLbTwhZE92R
+      27hb3qNSQkYM9lCUqxyHKhAPpr/Xf+ZrKpqBJErU1ve0JQiuGMfQ3RUJeBJGSTes
+      gAHjfEYLLqrPtk0dZ566j6inlpqoKRcjWzM9oik4j0v65AwGOVNe59AjuwARAQAB
+      tBRYcHJhIDx4cHJhQHhwcmEub3JnPokCUgQTAQoAPBYhBLSZO1cyMUjjeXfl2HMl
+      TK0Xl4+vBQJkhKcsAhsDBQkSzAMABAsJCAcEFQoJCAUWAgMBAAIeBQIXgAAKCRBz
+      JUytF5ePr4TbD/9oP4stXK0LeQQtZindGc2VC4LxDL78KmDCYOEblGj3B8JS+3D6
+      m3E2NKAUlnKtgMQAMKKkpk9LNYwPr/H/0HBjpWmQgI9dJzvKZRAkCE23hdiCHv8y
+      qqrGJmrOsU5+vsozM9b/eh5UJw2klxVyGgZHAdmF73MfSAy26Wf9IArecVCf0lyC
+      CaF6rNCkNquvq2d58B6Wvn/DdVQgwS+UUfd557+EbWrIu2txPeROfYtEuMGc7dMD
+      C/fWMutx97+7sVPASrfPIFZ/WPHsPnyXbKqDYKu+1cWCwljp6PqOBArnAa4++elK
+      AQ2VeOkwnYplp0/aPkGqQSJ+bD5rYVMOKXkpsEDOFZs3a38F1lqFakRQlJPxv2qc
+      qHd/G6kkYRetX6ONqyqy32DJO6dEXKwZJGIr6/4bQ/u+eQVDi2JrHvjy6d/4VPTD
+      eoXP0hzH4Z42XycfymLQSP1TVgQ/Tw9svT277dqSUCH+a0n/JdWd+b/fF/5P9aU2
+      kTYpvcC/jxa1gsJIV4Bm7sQvVZuNKLnkYsLmSj59MdKqLLnOOIzUmEb7MbCeaFTb
+      7x6Ah5s6m1iefFh2rAiPMJzi7Mz1f3f7jWytFMzsgOZid5pjvg7jXxXiq8WXpCyv
+      nAMK2pOnzT1wXAfUBIPgs/0VEUBTxyOpcIM6tS7Ft34iLjGTexpMQyIeLw==
+      =Eg3Z
+      -----END PGP PUBLIC KEY BLOCK-----
+
+  - path: /etc/apt/sources.list.d/xpra.list
+    permissions: '0644'
+    content: |
+      deb [signed-by=/usr/share/keyrings/xpra.asc] https://xpra.org/ bookworm main
+
+
+  - path: /usr/local/bin/start-xpra.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      exec >/tmp/xpra.log 2>&1
+
+      xpra start-desktop \
+        --bind-tcp=0.0.0.0:6080,auth=allow \
+        --html=on \
+        --mdns=no \
+        --exit-with-children=yes \
+        --resize-display=1920x1080 \
+        --dpi=96 \
+        --desktop-fullscreen=yes \
+        --cursors=no \
+        --daemon=no \
+        --start-child=/usr/local/bin/start-desktop-openbox.sh
+
+  - path: /etc/systemd/system/xpra.service
+    content: |
+      [Unit]
+      Description=Xpra HTML5 Firefox Session
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=root
+      ExecStart=/usr/local/bin/start-xpra.sh
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /usr/local/bin/start-desktop-openbox.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      exec >/tmp/session.log 2>&1
+      
+      openbox-session &
+      OB_PID=$!
+      
+      /usr/local/bin/set-wallpaper.sh &
+      firefox-esr "https://scp.mos.ru/login-er" &
+      
+      wait "$OB_PID"
+
+
+  - path: /usr/local/bin/start-ngate.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -e
+      
+      if [ -f /etc/ngate/credentials.env ]; then
+        source /etc/ngate/credentials.env
+      else
+        echo "Файл с учетными данными /etc/ngate/credentials.env не найден!"
+        exit 1
+      fi
+
+      if [ -z "$LOGIN" ] || [ -z "$PASSWORD" ] || [ -z "$HOST" ]; then
+          echo "Error: LOGIN, PASSWORD, and HOST переменные должны быть установлены в /etc/ngate/credentials.env"
+          exit 1
+      fi
+
+      mkdir -p /dev/net
+      if [ ! -c /dev/net/tun ]; then
+          mknod /dev/net/tun c 10 200
+          chmod 600 /dev/net/tun
+      fi
+
+      /opt/cprongate/ngatetun &
+      
+      sleep 2
+      echo "Запускаю VPN клиент: подключение к $HOST от имени $LOGIN"
+
+      exec /opt/cprongate/ngateconsoleclient -vvvv -l /dev/stdout -u "$LOGIN" -p "$PASSWORD" "$HOST"
+
+  - path: /etc/systemd/system/ngate.service
+    content: |
+      [Unit]
+      Description=CryptoPro NGate VPN Client
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      User=root
+      
+      EnvironmentFile=/etc/ngate/credentials.env
+      ExecStart=/usr/local/bin/start-ngate.sh
+      
+      Restart=always
+      RestartSec=30
+
+      [Install]
+      WantedBy=multi-user.target
+
+#  я просто не мог не поставить нескучные обои
+  - path: /usr/local/bin/set-wallpaper.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      
+      WALLPAPER_URL="https://i.ytimg.com/vi/KcrIki-qBsI/maxresdefault.jpg"
+      WALLPAPER_PATH="/usr/share/backgrounds/wallpaper.jpg"
+      
+      export DISPLAY=:0
+      export XAUTHORITY=/root/.Xauthority
+      
+      mkdir -p /usr/share/backgrounds
+      
+      if [ ! -f "$WALLPAPER_PATH" ]; then
+        echo "download wallpaper"
+        curl -fsSL -o "$WALLPAPER_PATH" "$WALLPAPER_URL" || exit 0
+      fi
+      
+      feh --bg-center "$WALLPAPER_PATH"
+
+  - path: /etc/firefox/policies/policies.json
+    content: |
+      {
+        "policies": {
+          "NoDefaultBookmarks": true,
+          
+          "Homepage": {
+            "URL": "https://scp.mos.ru/login-er",
+            "StartPage": "none",
+            "Locked": true
+          },
+          
+          "Bookmarks": [
+            {
+              "Title": "scp.mos.ru",
+              "URL": "https://scp.mos.ru/login-er",
+              "Placement": "toolbar"
+            },
+            {
+              "Title": "креды",
+              "URL": "file:///etc/ngate/credentials.env",
+              "Placement": "toolbar"
+            },
+            {
+              "Title": "sakura test",
+              "URL": "http://localhost:4567/test",
+              "Placement": "toolbar"
+            }
+          ],
+          
+          "SkipTermsOfUse": true,
+          "OverrideFirstRunPage": "",
+          "OverridePostUpdatePage": "",
+          "DontCheckDefaultBrowser": true,
+          
+          "DisableTelemetry": true,
+          "DisableFirefoxStudies": true,
+          "DisablePocket": true,
+          "DisableFirefoxAccounts": true,
+          "DisableSystemAddonUpdate": true,
+          "DisableFeedbackCommands": true,
+          
+          "DisableFormHistory": true,
+          "DisablePasswordReveal": true,
+          "DisableMasterPasswordCreation": true,
+          "PasswordManagerEnabled": false,
+          "OfferToSaveLogins": false,
+          "AutofillAddressEnabled": false,
+          "AutofillCreditCardEnabled": false,
+          
+          "DisableAppUpdate": true,
+          "AppAutoUpdate": false,
+          "ManualAppUpdateOnly": true,
+          "BackgroundAppUpdate": false,
+          
+          "NewTabPage": false,
+          
+          "FirefoxHome": {
+            "Search": false,
+            "TopSites": false,
+            "SponsoredTopSites": false,
+            "Highlights": false,
+            "Pocket": false,
+            "SponsoredPocket": false,
+            "Snippets": false,
+            "Locked": true
+          },
+          
+          "SearchSuggestEnabled": false,
+          
+          "FirefoxSuggest": {
+            "WebSuggestions": false,
+            "SponsoredSuggestions": false,
+            "ImproveSuggest": false,
+            "Locked": true
+          },
+          
+          "UserMessaging": {
+            "ExtensionRecommendations": false,
+            "UrlbarInterventions": false,
+            "MoreFromMozilla": false,
+            "FirefoxLabs": false,
+            "WhatsNew": false,
+            "Locked": true
+          },
+          
+          "HardwareAcceleration": false,
+          "NetworkPrediction": false,
+          
+          "PictureInPicture": {
+            "Enabled": false,
+            "Locked": true
+          },
+          
+          "TranslateEnabled": false,
+          
+          "PromptForDownloadLocation": false,
+          
+          "Preferences": {
+            "datareporting.policy.dataSubmissionPolicyBypassNotification": true,
+            "dom.ipc.processCount": 1,
+            "browser.cache.memory.capacity": 65536
+          }
+        }
+      }
+
+package_update: false
+package_upgrade: false
+
+packages:
+  - curl
+  - ca-certificates
+  - iproute2
+  - iputils-ping
+  - openbox
+  - dbus-x11
+  - xvfb
+  - libglib2.0-0
+  - libusb-1.0-0
+  - pcscd
+  - libccid
+  - feh
+  - cprongate-console
+  - cprongate-tun
+  - firefox-esr
+  - xpra
+  - xpra-x11
+  - xpra-html5
+  - libx264-164
+
+
+users:
+  - name: debian
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: false
+
+ssh_pwauth: true
+
+runcmd:
+  - echo 'debian:debian' | chpasswd
+  - echo 'root:root' | chpasswd
+
+  # Пароль VNC - "debian"
+  - mkdir -p /etc/ngate
+
+  - mkdir -p /tmp/csp
+  - curl -k -L -o /tmp/csp.tgz 'https://cloud.dit.mos.ru/s/DT6yq8LfE4InCqA/download?path=%2F&files=linux-amd64_deb.tgz'
+  - tar -xzf /tmp/csp.tgz -C /tmp/csp
+  - cd /tmp/csp/linux-amd64_deb && ./install.sh kc1
+  - cd /tmp/csp/linux-amd64_deb && dpkg -i cprocsp-compat-debian*.deb || true
+  - rm -rf /tmp/csp /tmp/csp.tgz
+
+  - cd /tmp
+  - curl -A 'Mozilla/5.0' -L -k -o Kornevoy-sertifikat-GUTS-2022.CER https://cloud.dit.mos.ru/s/8TECYZMzkcLE2GQ/download/Kornevoy-sertifikat-GUTS-2022.CER
+  - /opt/cprocsp/bin/amd64/certmgr -inst -cert -file Kornevoy-sertifikat-GUTS-2022.CER -store mRoot
+  - rm Kornevoy-sertifikat-GUTS-2022.CER
+
+  - curl -A 'Mozilla/5.0' -k -L -o /tmp/sakura.deb 'https://cloud.dit.mos.ru/s/dJSEr2LcmaHF4zA/download?path=%2FLinux&files=sakura-agent-2.35.5.deb'
+  - apt-get install -y /tmp/sakura.deb
+  - rm /tmp/sakura.deb
+
+  - systemctl enable --now xpra
+  - systemctl enable ngate
+  - echo "после первой сборки нужно перетащить креды в вм (make apply)"

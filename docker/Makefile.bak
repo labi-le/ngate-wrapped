@@ -19,3 +19,9 @@ logs:
 
 terminal:
 	$(COMPOSE_CMD) exec ngate sh -c 'bash'
+
+kill-wm:
+	-pkill -f "Debian-Nix-VM"
+
+clean-wm:
+	rm -f debian-work.qcow2 seed.img

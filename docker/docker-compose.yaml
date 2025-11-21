@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   ngate:
-    build: .
+    build: ..
     container_name: ngate-vpn
     cap_add:
       - NET_ADMIN
@@ -31,3 +29,19 @@ services:
     cap_add:
       - NET_ADMIN
     restart: always
+
+  vnc:
+    image: consol/debian-xfce-vnc
+    container_name: ngate-vnc
+    ports:
+      - "6901:6901"  # noVNC (web браузер)
+    environment:
+      - VNC_PW=vncpassword  # измени пароль
+      - VNC_RESOLUTION=1920x1080
+    dns:
+      - 192.168.1.1
+      - 10.206.185.123
+      - 10.15.40.122
+    shm_size: '512m'
+    restart: always
+    network_mode: "service:ngate"
